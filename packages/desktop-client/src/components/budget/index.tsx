@@ -19,6 +19,7 @@ import {
   useBudgetActions,
   useCreateCategoryGroupMutation,
   useCreateCategoryMutation,
+  useDeleteCategoryGroupMutation,
   useDeleteCategoryMutation,
   useMoveCategoryGroupMutation,
   useMoveCategoryMutation,
@@ -74,7 +75,7 @@ function BudgetInner(props: BudgetInnerProps) {
   const moveCategory = useMoveCategoryMutation();
   const createCategoryGroup = useCreateCategoryGroupMutation();
   const updateCategoryGroup = useUpdateCategoryGroupMutation();
-  const deleteCategoryGroup = useDeleteCategoryMutation();
+  const deleteCategoryGroup = useDeleteCategoryGroupMutation();
   const moveCategoryGroup = useMoveCategoryGroupMutation();
   const navigate = useNavigate();
   const [summaryCollapsed, setSummaryCollapsedPref] = useLocalPref(
