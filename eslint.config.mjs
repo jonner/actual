@@ -160,7 +160,6 @@ export default defineConfig(
   pluginReact.configs.flat['jsx-runtime'],
   pluginTypescript.configs.recommended,
   pluginImport.flatConfigs.recommended,
-  // pluginReactHooks.configs.flat.recommended,
   {
     plugins: {
       actual: pluginActual,
