@@ -454,7 +454,7 @@ export default defineConfig(
       'react-hooks/exhaustive-deps': [
         'warn',
         {
-          additionalHooks: '(useQuery|useEffectAfterMount)',
+          additionalHooks: '(^useQuery$|^useEffectAfterMount$)',
         },
       ],
 

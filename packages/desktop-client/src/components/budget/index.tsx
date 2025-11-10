@@ -15,9 +15,17 @@ import * as trackingBudget from './tracking/TrackingBudgetComponents';
 import { TrackingBudgetProvider } from './tracking/TrackingBudgetContext';
 import { prewarmAllMonths, prewarmMonth } from './util';
 
-import { useBudgetActions } from '@desktop-client/hooks/useBudgetActions';
+import {
+  useBudgetActions,
+  useCreateCategoryGroupMutation,
+  useCreateCategoryMutation,
+  useDeleteCategoryMutation,
+  useMoveCategoryGroupMutation,
+  useMoveCategoryMutation,
+  useUpdateCategoryGroupMutation,
+  useUpdateCategoryMutation,
+} from '@desktop-client/budget';
 import { useCategories } from '@desktop-client/hooks/useCategories';
-import { useCategoryMutations } from '@desktop-client/hooks/useCategoryMutations';
 import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
 import { useLocalPref } from '@desktop-client/hooks/useLocalPref';
 import { useNavigate } from '@desktop-client/hooks/useNavigate';
@@ -60,16 +68,14 @@ function BudgetInner(props: BudgetInnerProps) {
   const spreadsheet = useSpreadsheet();
   const dispatch = useDispatch();
   const applyBudgetAction = useBudgetActions();
-  const {
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    moveCategory,
-    createCategoryGroup,
-    updateCategoryGroup,
-    deleteCategoryGroup,
-    moveCategoryGroup,
-  } = useCategoryMutations();
+  const createCategory = useCreateCategoryMutation();
+  const updateCategory = useUpdateCategoryMutation();
+  const deleteCategory = useDeleteCategoryMutation();
+  const moveCategory = useMoveCategoryMutation();
+  const createCategoryGroup = useCreateCategoryGroupMutation();
+  const updateCategoryGroup = useUpdateCategoryGroupMutation();
+  const deleteCategoryGroup = useDeleteCategoryMutation();
+  const moveCategoryGroup = useMoveCategoryGroupMutation();
   const navigate = useNavigate();
   const [summaryCollapsed, setSummaryCollapsedPref] = useLocalPref(
     'budget.summaryCollapsed',
