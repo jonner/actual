@@ -9,8 +9,8 @@ import {
   type TransactionEntity,
 } from 'loot-core/types/models';
 
+import { useSyncAndDownloadMutation } from '@desktop-client/accounts';
 import { markAccountRead } from '@desktop-client/accounts/accountsSlice';
-import { syncAndDownload } from '@desktop-client/app/appSlice';
 import { TransactionListWithBalances } from '@desktop-client/components/mobile/transactions/TransactionListWithBalances';
 import { useAccountPreviewTransactions } from '@desktop-client/hooks/useAccountPreviewTransactions';
 import { SchedulesProvider } from '@desktop-client/hooks/useCachedSchedules';
@@ -76,11 +76,12 @@ function TransactionListWithPreviews({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const syncAndDownload = useSyncAndDownloadMutation();
   const onRefresh = useCallback(() => {
     if (account.id) {
-      dispatch(syncAndDownload({ accountId: account.id }));
+      syncAndDownload.mutate({ id: account.id });
     }
-  }, [account.id, dispatch]);
+  }, [account.id, syncAndDownload]);
 
   useEffect(() => {
     if (account.id) {
