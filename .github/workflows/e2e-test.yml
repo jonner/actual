@@ -28,9 +28,12 @@ jobs:
         run: ./.github/actions/netlify-wait-for-build
 
   functional:
-    name: Functional
+    name: Functional (shard ${{ matrix.shard }}/5)
     needs: netlify
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     container:
       image: mcr.microsoft.com/playwright:v1.56.0-jammy
     steps:
@@ -40,13 +43,13 @@ jobs:
       - name: Trust the repository directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Run E2E Tests on Netlify URL
-        run: yarn e2e
+        run: yarn workspace @actual-app/web run playwright test --browser=chromium --shard=${{ matrix.shard }}/5
         env:
           E2E_START_URL: ${{ needs.netlify.outputs.netlify_url }}
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
         with:
-          name: desktop-client-test-results
+          name: desktop-client-test-results-shard-${{ matrix.shard }}
           path: packages/desktop-client/test-results/
           retention-days: 30
           overwrite: true
@@ -74,9 +77,12 @@ jobs:
           overwrite: true
 
   vrt:
-    name: Visual regression
+    name: Visual regression (shard ${{ matrix.shard }}/5)
     needs: netlify
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     container:
       image: mcr.microsoft.com/playwright:v1.56.0-jammy
     steps:
@@ -84,13 +90,14 @@ jobs:
       - name: Set up environment
         uses: ./.github/actions/setup
       - name: Run VRT Tests on Netlify URL
-        run: yarn vrt
+        run: yarn workspace @actual-app/web run playwright test --browser=chromium --shard=${{ matrix.shard }}/5
         env:
           E2E_START_URL: ${{ needs.netlify.outputs.netlify_url }}
+          VRT: true
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         if: always()
         with:
-          name: desktop-client-test-results
+          name: desktop-client-vrt-results-shard-${{ matrix.shard }}
           path: packages/desktop-client/test-results/
           retention-days: 30
           overwrite: true
