@@ -51,6 +51,7 @@ export type CrossoverParams = {
   safeWithdrawalRate: number; // annual percent, e.g. 0.04 for 4%
   estimatedReturn?: number | null; // optional annual return to project future balances
   projectionType: 'trend' | 'hampel'; // expense projection method
+  expenseAdjustmentFactor?: number; // multiplier for expenses (default 1.0)
 };
 
 export function createCrossoverSpreadsheet({
@@ -61,6 +62,7 @@ export function createCrossoverSpreadsheet({
   safeWithdrawalRate,
   estimatedReturn,
   projectionType,
+  expenseAdjustmentFactor,
 }: CrossoverParams) {
   return async (
     _spreadsheet: ReturnType<typeof useSpreadsheet>,
@@ -167,6 +169,7 @@ export function createCrossoverSpreadsheet({
           safeWithdrawalRate,
           estimatedReturn,
           projectionType,
+          expenseAdjustmentFactor,
         },
         expenses,
         historicalBalances,
@@ -185,6 +188,7 @@ function recalculate(
     | 'safeWithdrawalRate'
     | 'estimatedReturn'
     | 'projectionType'
+    | 'expenseAdjustmentFactor'
   >,
   expenses: MonthlyAgg[],
   historicalAccounts: Array<{
@@ -231,12 +235,15 @@ function recalculate(
     x: string;
     investmentIncome: number;
     expenses: number;
+    adjustedExpenses?: number;
     isProjection?: boolean;
   }> = [];
 
   let lastBalance = 0;
   let lastExpense = 0;
   let crossoverIndex: number | null = null;
+  const adjustmentFactor = params.expenseAdjustmentFactor ?? 1.0;
+
   months.forEach((month, idx) => {
     const balance = historicalBalances[idx]; // Use historical balances for data generation
     const monthlyIncome = balance * monthlySWR;
@@ -352,16 +359,21 @@ function recalculate(
         projectedExpenses = Math.max(0, hampelFilteredExpense);
       }
 
+      // Calculate adjusted expenses
+      const adjustedProjectedExpenses = projectedExpenses * adjustmentFactor;
+
       data.push({
         x: d.format(monthCursor, 'MMM yyyy'),
         investmentIncome: Math.round(projectedIncome),
         expenses: Math.round(projectedExpenses),
+        adjustedExpenses: Math.round(adjustedProjectedExpenses),
         isProjection: true,
       });
 
+      // Check crossover against ADJUSTED expenses
       if (
         crossoverIndex == null &&
-        Math.round(projectedIncome) >= Math.round(projectedExpenses)
+        Math.round(projectedIncome) >= Math.round(adjustedProjectedExpenses)
       ) {
         crossoverIndex = months.length + (i - 1);
         break;
@@ -379,7 +391,7 @@ function recalculate(
       const crossoverDate = d.parse(crossoverData.x, 'MMM yyyy', currentDate);
       const monthsDiff = d.differenceInMonths(crossoverDate, currentDate);
       yearsToRetire = monthsDiff > 0 ? monthsDiff / 12 : 0;
-      targetMonthlyIncome = crossoverData.expenses;
+      targetMonthlyIncome = crossoverData.adjustedExpenses ?? null;
     }
   }
 
