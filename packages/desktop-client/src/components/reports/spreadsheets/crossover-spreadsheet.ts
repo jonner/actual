@@ -95,6 +95,7 @@ export function createCrossoverSpreadsheet({
   expectedContribution,
   projectionType,
   expenseAdjustmentFactor,
+  inflationRate,
 }: CrossoverParams) {
   return async (
     _spreadsheet: ReturnType<typeof useSpreadsheet>,
@@ -204,6 +205,7 @@ export function createCrossoverSpreadsheet({
           expectedContribution,
           projectionType,
           expenseAdjustmentFactor,
+          inflationRate,
         },
         expenses,
         historicalBalances,
@@ -224,6 +226,7 @@ function recalculate(
     | 'expectedContribution'
     | 'projectionType'
     | 'expenseAdjustmentFactor'
+    | 'inflationRate'
   >,
   expenses: MonthlyAgg[],
   historicalAccounts: Array<{
@@ -357,6 +360,22 @@ function recalculate(
 
     const y: number[] = months.map(m => expenseMap.get(m) || 0);
 
+    /**
+     * Calculate monthly inflation rate from annual rate.
+     *
+     * Uses compound interest formula: (1 + annual)^(1/12) - 1
+     * This ensures that 12 months of monthly inflation equals the annual rate.
+     *
+     * Example: 3% annual → 0.2466% monthly
+     * After 12 months: (1.002466)^12 ≈ 1.03 (3% total)
+     *
+     * Note: Simple division (annual/12) would give incorrect results due to
+     * compounding effects over multiple months.
+     */
+    const monthlyInflationRate = params.inflationRate
+      ? Math.pow(1 + params.inflationRate, 1 / 12) - 1
+      : 0;
+
     if (params.projectionType === 'hampel') {
       // Hampel filtered median calculation
       flatExpense = calculateHampelFilteredMedian(y);
@@ -381,7 +400,26 @@ function recalculate(
 
       const projectedIncome = projectedBalance * monthlySWR;
 
-      const projectedExpenses = Math.max(0, flatExpense);
+      let projectedExpenses = Math.max(0, flatExpense);
+
+      /**
+       * Apply inflation adjustment to projected expenses.
+       *
+       * Uses monthly compounding to adjust expenses for inflation over time:
+       * adjustedExpense = baseExpense × (1 + monthlyRate)^months
+       *
+       * This accounts for the cumulative effect of inflation, where each month's
+       * inflation builds on the previous months' increases.
+       *
+       * Example with 3% annual inflation:
+       * - Month 1: $1000 × 1.002466^1 = $1002.47
+       * - Month 12: $1000 × 1.002466^12 = $1030.00 (3% increase)
+       * - Month 60: $1000 × 1.002466^60 = $1159.27 (15.9% over 5 years)
+       */
+      if (monthlyInflationRate > 0) {
+        projectedExpenses =
+          projectedExpenses * Math.pow(1 + monthlyInflationRate, i);
+      }
 
       // Calculate adjusted expenses
       const adjustedProjectedExpenses = projectedExpenses * adjustmentFactor;
